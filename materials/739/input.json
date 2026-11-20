@@ -1,0 +1,94 @@
+{
+  "observations": [
+    {
+      "sample_id": "s1",
+      "revision": 1,
+      "bits": "3dcccccd"
+    },
+    {
+      "sample_id": "s2",
+      "revision": 1,
+      "bits": "80000000"
+    },
+    {
+      "sample_id": "s3",
+      "revision": 1,
+      "bits": "7fc00001"
+    },
+    {
+      "sample_id": "s4",
+      "revision": 1,
+      "bits": "7f800000"
+    },
+    {
+      "sample_id": "s5",
+      "revision": 1,
+      "bits": "00000001"
+    }
+  ],
+  "references": {
+    "version": "r1",
+    "items": [
+      {
+        "sample_id": "s1",
+        "expected": "1/10",
+        "tolerance": "0"
+      },
+      {
+        "sample_id": "s2",
+        "expected": "0",
+        "tolerance": "0"
+      },
+      {
+        "sample_id": "s3",
+        "expected": "0",
+        "tolerance": "0"
+      },
+      {
+        "sample_id": "s4",
+        "expected": "1",
+        "tolerance": "0"
+      },
+      {
+        "sample_id": "s5",
+        "expected": "0",
+        "tolerance": "0"
+      }
+    ]
+  },
+  "operations": [
+    {
+      "op": "report",
+      "report_id": "before",
+      "reference_version": "r1"
+    },
+    {
+      "op": "correct_observation",
+      "record": {
+        "sample_id": "s1",
+        "revision": 2,
+        "bits": "3e000000"
+      }
+    },
+    {
+      "op": "publish_reference",
+      "version": "r2",
+      "replace": [
+        {
+          "sample_id": "s1",
+          "expected": "1/8",
+          "tolerance": "0"
+        }
+      ]
+    },
+    {
+      "op": "report",
+      "report_id": "after",
+      "reference_version": "r2"
+    },
+    {
+      "op": "read_old_report",
+      "report_id": "before"
+    }
+  ]
+}
