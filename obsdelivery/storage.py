@@ -13,6 +13,10 @@ Design notes
   content under the same id raises a conflict.
 * Failed deliveries never touch ``deliveries``; they are only audited in
   ``delivery_attempts`` (audit rows are not a successful identity).
+* Re-test measurements mirror observations: append-only per
+  ``(specimen_id, position, revision)`` with highest-revision-wins; the
+  re-test plan of a specimen is immutable.  Endpoint snapshots and desk
+  plans are immutable, content-digested rows that re-open read-only.
 """
 
 from __future__ import annotations
@@ -156,6 +160,85 @@ CREATE TABLE IF NOT EXISTS delivery_attempts (
     status          TEXT NOT NULL,
     reasons_json    TEXT NOT NULL,
     created_at      TEXT NOT NULL
+);
+
+-- Re-test endpoints: pre-registered positions per specimen (immutable plan).
+CREATE TABLE IF NOT EXISTS retest_plan (
+    specimen_id     TEXT PRIMARY KEY,
+    positions_json  TEXT NOT NULL,
+    required_count  INTEGER NOT NULL,
+    content_digest  TEXT NOT NULL,
+    created_at      TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS retest_admissions (
+    admission_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+    batch_digest  TEXT NOT NULL UNIQUE,
+    accepted      INTEGER NOT NULL,
+    outcome       TEXT NOT NULL,
+    canonical     TEXT NOT NULL,
+    created_at    TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS retest_batch_member (
+    admission_id  INTEGER NOT NULL REFERENCES retest_admissions(admission_id),
+    specimen_id   TEXT NOT NULL,
+    position      TEXT NOT NULL,
+    revision      INTEGER NOT NULL,
+    action        TEXT NOT NULL,
+    bits          TEXT,
+    disposition   TEXT NOT NULL,
+    PRIMARY KEY (admission_id, specimen_id, position, revision)
+);
+
+CREATE TABLE IF NOT EXISTS retest_measurements (
+    specimen_id   TEXT NOT NULL,
+    position      TEXT NOT NULL,
+    revision      INTEGER NOT NULL,
+    action        TEXT NOT NULL,
+    bits          TEXT,
+    raw           INTEGER,
+    admission_id  INTEGER NOT NULL,
+    PRIMARY KEY (specimen_id, position, revision)
+);
+
+CREATE TABLE IF NOT EXISTS endpoint_snapshots (
+    snapshot_id    TEXT PRIMARY KEY,
+    specimen_id    TEXT NOT NULL,
+    content_digest TEXT NOT NULL,
+    canonical      TEXT NOT NULL,
+    created_at     TEXT NOT NULL
+);
+
+-- Quality planning desk: line configs and immutable joint threshold plans.
+CREATE TABLE IF NOT EXISTS desk_line (
+    line_id            TEXT PRIMARY KEY,
+    shift_count        INTEGER NOT NULL,
+    ratio_lo           TEXT NOT NULL,
+    ratio_hi           TEXT NOT NULL,
+    cost_false_accept  TEXT NOT NULL,
+    cost_false_reject  TEXT NOT NULL,
+    cost_review        TEXT NOT NULL,
+    calibration_json   TEXT NOT NULL,
+    content_digest     TEXT NOT NULL,
+    created_at         TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS desk_plan (
+    plan_id        TEXT PRIMARY KEY,
+    shared_quota   TEXT NOT NULL,
+    input_json     TEXT NOT NULL,
+    output_json    TEXT NOT NULL,
+    content_digest TEXT NOT NULL,
+    created_at     TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS desk_attempt (
+    attempt_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    plan_id      TEXT NOT NULL,
+    status       TEXT NOT NULL,
+    reasons_json TEXT NOT NULL,
+    created_at   TEXT NOT NULL
 );
 """
 
